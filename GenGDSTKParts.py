@@ -86,18 +86,23 @@ def Racetrack(width,radius,InteractionLength,cell_name,DrawingLayer=1):
     return cell
 
 
-def GC2(width, tap_l=18,ArcAngle=np.pi*35/180,GC_footprint=20,GC_separation=250,pitch = 0.485, FillFactor=0.4, cell_name="GC2_test", DrawingLayer=1):
-    ## define params
-    #tap_l = 18
-    #ArcAngle = np.pi*35/180;
-    #GC_footprint = 20
-    #GC_separation = 250
-    #pitch = 0.485
-    #FillFactor = 0.4
-    #
-    #cell_name = "Coupler_485nm_w400nm"
-    #DrawingLayer = 1
+def GC2(width, tap_l=18, ArcAngle=np.pi*35/180, GC_footprint=20, GC_separation=200, pitch = 0.485, FillFactor=0.4, straight_length=100, cell_name="GC2_test", DrawingLayer=1):
+    # Creates a two grating couplers connected by a bezier bend in the shape of a semicircle
+    # @ params
+    #    width               width of waveguide
+    #    tap_l               taper length of the grating coupler
+    #    ArcAngle            Angle of the grating coupler
+    #    GC_footprint        Size of the cell
+    #    GC_separation       Separation between the two grating couplers
+    #    pitch               Separation between each tooth of the grating coupler
+    #    FillFactor          Measure of how dense the grating coupler is
+    #    straight_length     The length of the waveguide between the end of the bezier bend and the grating coupler
+    #    cell_name           User defined name for the cell
+    #    DrawingLayer        Layer 
     
+    # @ Ret
+    #   pcell object
+     
     # Generate GC------------------------------------------------------------------
     cell = lib.new_cell(cell_name)
     NumOfCycle = math.floor(GC_footprint/pitch)
@@ -141,30 +146,47 @@ def GC2(width, tap_l=18,ArcAngle=np.pi*35/180,GC_footprint=20,GC_separation=250,
     #width = 0.4 
     radius = GC_separation/2
     NumOfPts = math.ceil(radius*500/62.5)
-    h = width/2/math.tan(ArcAngle/2);
+    h = width/2/math.tan(ArcAngle/2) - straight_length;
     
     # bezier
     points_references = [(radius,-h),(radius,radius-h),(0,radius-h)]
     points_curve = [points_references[0]]
-    for t in np.linspace(0,1, num=NumOfPts):
+    for t in np.linspace(0, 1, num=NumOfPts):
         x_temp = points_references[0][0]*((1-t)**2)+2*t*(1-t)*points_references[1][0]+points_references[2][0]*(t**2)
         y_temp = points_references[0][1]*((1-t)**2)+2*t*(1-t)*points_references[1][1]+points_references[2][1]*(t**2)
         points_curve.append((x_temp,y_temp))
+        if t == 0:
+            x_start = (x_temp)
+            y_start = (y_temp)
+
+
+    path1 = gdstk.FlexPath([(x_start, y_start), (x_start, y_start - straight_length)], width, layer=1)
+    
     
     # path
     path_bezier = gdstk.FlexPath(points_curve, width,layer=1)
     cell.add(path_bezier)
-    
+    cell.add(path1)
+
     points_references = [(-radius,0-h),(-radius,radius-h),(0,radius-h)]
     points_curve = [points_references[0]]
+
     for t in np.linspace(0,1, num=NumOfPts):
         x_temp = points_references[0][0]*((1-t)**2)+2*t*(1-t)*points_references[1][0]+points_references[2][0]*(t**2)
         y_temp = points_references[0][1]*((1-t)**2)+2*t*(1-t)*points_references[1][1]+points_references[2][1]*(t**2)
         points_curve.append((x_temp,y_temp))
-    
+        if t == 0:
+            x_start = (x_temp)
+            y_start = (y_temp)
+
+
+    path2 = gdstk.FlexPath([(x_start, y_start), (x_start, y_start - straight_length)], width, layer=1)
+    cell.add(path2)
     # path
     path_bezier = gdstk.FlexPath(points_curve, width,layer=1)
     cell.add(path_bezier)
+    
+
     return cell
 
 def GC4(width, tap_l=18, ArcAngle=np.pi*35/180, GC_footprint=20, GC_separation=250, pitch_TE=0.485, pitch_TM=0.485, FillFactor=0.4, cell_name="GC4_test", DrawingLayer=1):
